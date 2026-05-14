@@ -628,28 +628,13 @@ html, body {
 // ══════════════════════════════════════════
 // BROCHURE DATABASE — edit this array to manage your brochures
 // ══════════════════════════════════════════
-const BROCHURES = [
-  { code: 'US-100123', name: 'Spring Wellness Collection 2025',  expires: '3/25' },
-  { code: 'US-100124', name: 'Summer Travel Guide — Pacific',    expires: '6/25' },
-  { code: 'US-200456', name: 'Annual Benefits Overview',         expires: '12/25' },
-  { code: 'US-200457', name: 'Medicare Supplement Plans',        expires: '9/25' },
-  { code: 'US-300789', name: 'New Member Welcome Kit',           expires: '6/26' },
-  { code: 'US-300790', name: 'Provider Network Directory',       expires: '3/26' },
-  { code: 'US-123456', name: 'Dental & Vision Add-On Guide',     expires: '6/26' },
-  { code: 'US-999001', name: 'Legacy Plan Comparison Chart',     expires: '1/24' },
-];
+const BROCHURES = {
+  "US-107376": { name: "DATROWAY Dosing & Infusion Guide", expired: false },
+  "US-95934":  { name: "TRUQAP Educational Resource",      expired: true  },
+  "US-100092": { name: "DATROWAY Book",                    expired: false },
+};
 
-function parseExpiry(str) {
-  const [m, y] = str.trim().split('/').map(Number);
-  const fullYear = y < 100 ? 2000 + y : y;
-  return new Date(fullYear, m, 0, 23, 59, 59); // last day of that month
-}
-function isExpired(str) { return parseExpiry(str) < new Date(); }
-function formatExpiry(str) {
-  const [m, y] = str.trim().split('/').map(Number);
-  return new Date(y < 100 ? 2000 + y : y, m - 1, 1)
-    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
+
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -687,7 +672,7 @@ function renderLookup(fullCode) {
   const parts = fullCode.trim().split(' ');
   const codeId = parts[0].toUpperCase();
 
-  const record = BROCHURES.find(b => b.code.toUpperCase() === codeId);
+  const record = BROCHURES[codeId] || null;
   const card = document.getElementById('resultCard');
   const badge = document.getElementById('statusBadge');
   const cardTitle = document.getElementById('resultCardTitle');
@@ -710,8 +695,7 @@ function renderLookup(fullCode) {
     return;
   }
 
-  const expired = isExpired(record.expires);
-  const expiryFmt = formatExpiry(record.expires);
+  const expired = record.expired;
 
   if (expired) {
     card.className = 'result-card expired';
@@ -734,12 +718,9 @@ function renderLookup(fullCode) {
     </div>
     <div class="detail-row">
       <div class="detail-label">Edition Code</div>
-      <div class="detail-value" style="font-family:'DM Mono',monospace;font-size:14px">${esc(record.code)}</div>
+      <div class="detail-value" style="font-family:'DM Mono',monospace;font-size:14px">${esc(codeId)}</div>
     </div>
-    <div class="detail-row">
-      <div class="detail-label">${expired ? 'Expired' : 'Valid Through'}</div>
-      <div class="detail-value ${expired ? 'expired-date' : 'valid-date'}">${expiryFmt}</div>
-    </div>
+
   `;
 }
 
@@ -804,7 +785,7 @@ async function processImage(dataUrl) {
     await worker.terminate();
 
     // Match US-XXXXXX followed by optional spaces and M/YY or MM/YY
-    const matches = [...text.matchAll(/US-\d{6}\s+\d{1,2}\/\d{2}/gi)]
+    const matches = [...text.matchAll(/US-\d{4,7}\s+\d{1,2}\/\d{2}/gi)]
       .map(m => m[0].replace(/\s+/, ' ').toUpperCase());
 
     const seen = new Set();
