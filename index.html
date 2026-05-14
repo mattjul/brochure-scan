@@ -3,776 +3,936 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Code Scanner</title>
+<title>Brochure Verify</title>
 <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne+Mono&family=Syne:wght@400;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --border: #1e1e2e;
-    --accent: #00ff88;
-    --accent2: #ff3cac;
-    --text: #e8e8f0;
-    --muted: #5a5a7a;
-    --scan-line: rgba(0,255,136,0.4);
-  }
+:root {
+  --cream: #f5f0e8;
+  --cream2: #ede7d9;
+  --paper: #faf7f2;
+  --ink: #1a1612;
+  --ink2: #3d342a;
+  --muted: #8c7b6b;
+  --rule: #d4c9b8;
+  --gold: #b8933a;
+  --gold-light: #e8c96a;
+  --red: #c0392b;
+  --green: #2d6a4f;
+  --green-light: #d8f3dc;
+  --red-light: #fdecea;
+}
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    overflow: hidden;
-  }
+html, body {
+  height: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+}
 
-  /* ── SCREENS ── */
-  .screen {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 24px;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  .screen.hidden {
-    opacity: 0; pointer-events: none; transform: translateY(20px);
-  }
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.screen.hidden {
+  opacity: 0; pointer-events: none; transform: translateY(16px);
+}
 
-  /* ── HOME ── */
-  #home {
-    gap: 48px;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,136,0.07) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,60,172,0.06) 0%, transparent 70%),
-      var(--bg);
-  }
+/* ══ HOME ══ */
+#home { justify-content: flex-start; background: var(--paper); }
 
-  .logo-wrap {
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-  }
-  .logo-icon {
-    width: 72px; height: 72px;
-    border: 2px solid var(--accent);
-    border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-    box-shadow: 0 0 32px rgba(0,255,136,0.2), inset 0 0 16px rgba(0,255,136,0.05);
-  }
-  .logo-icon::before {
-    content: '';
-    position: absolute; inset: 6px;
-    border: 1px solid rgba(0,255,136,0.3);
-    border-radius: 8px;
-  }
-  .logo-icon svg { width: 32px; height: 32px; stroke: var(--accent); }
+.home-header {
+  width: 100%;
+  background: var(--ink);
+  padding: 52px 28px 28px;
+  position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+.home-header::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+}
+.home-header::before {
+  content: '· · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·';
+  position: absolute; top: 14px; left: 0; right: 0;
+  text-align: center; font-size: 10px; letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.15);
+  overflow: hidden; white-space: nowrap;
+}
+.header-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: 10px;
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 6vw, 2.2rem); font-weight: 700;
+  color: #fff; line-height: 1.15;
+}
+.header-title em { font-style: italic; color: var(--gold-light); }
+.header-sub {
+  margin-top: 8px; font-size: 13px;
+  color: rgba(255,255,255,0.5); line-height: 1.5;
+}
 
-  .logo-title {
-    font-size: 13px; font-weight: 700; letter-spacing: 0.3em;
-    text-transform: uppercase; color: var(--accent);
-  }
+.instruction-card {
+  margin: 24px 20px 0; width: calc(100% - 40px);
+  background: var(--cream);
+  border: 1px solid var(--rule); border-radius: 4px;
+  padding: 20px; position: relative;
+}
+.instruction-card::before {
+  content: '';
+  position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+  background: var(--gold); opacity: 0.4;
+}
+.instr-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 12px; font-weight: 700; color: var(--ink2);
+  margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.1em;
+}
+.steps { display: flex; flex-direction: column; gap: 12px; }
+.step { display: flex; gap: 14px; align-items: flex-start; }
+.step-num {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: 1px solid var(--gold); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold);
+  margin-top: 1px;
+}
+.step-text { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.step-text strong { color: var(--ink); }
 
-  .home-headline {
-    text-align: center;
-  }
-  .home-headline h1 {
-    font-size: clamp(2rem, 8vw, 2.8rem);
-    font-weight: 800; line-height: 1.1;
-    letter-spacing: -0.02em;
-  }
-  .home-headline h1 span { color: var(--accent); }
-  .home-headline p {
-    margin-top: 12px;
-    color: var(--muted);
-    font-size: 15px; line-height: 1.6;
-  }
+.format-example {
+  margin: 16px 20px 0; width: calc(100% - 40px);
+  background: var(--ink); border-radius: 4px;
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.format-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+.format-code {
+  font-family: 'DM Mono', monospace; font-size: 15px;
+  color: var(--gold-light); letter-spacing: 0.05em;
+}
 
-  .url-config {
-    width: 100%; max-width: 340px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .url-config label {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--muted);
-  }
-  .url-input-row {
-    display: flex; gap: 8px; align-items: center;
-  }
-  .url-config input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: var(--text);
-    font-family: 'Syne Mono', monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .url-config input:focus { border-color: var(--accent); }
-  .url-config input::placeholder { color: var(--muted); }
+.scan-btn-wrap { padding: 20px 20px 0; width: 100%; }
+.btn-scan {
+  width: 100%; background: var(--gold); color: var(--ink);
+  border: none; border-radius: 4px; padding: 18px 24px;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  letter-spacing: 0.04em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background 0.2s, transform 0.12s;
+  box-shadow: 0 2px 12px rgba(184,147,58,0.35);
+}
+.btn-scan:active { transform: scale(0.98); background: #a07c2e; }
+.btn-scan svg { width: 18px; height: 18px; stroke: var(--ink); flex-shrink: 0; }
 
-  .param-hint {
-    font-family: 'Syne Mono', monospace;
-    font-size: 11px; color: var(--muted);
-  }
-  .param-hint span { color: var(--accent2); }
+.divider-or {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px 0; width: 100%;
+  color: var(--muted); font-size: 12px; letter-spacing: 0.1em;
+}
+.divider-or::before, .divider-or::after {
+  content: ''; flex: 1; height: 1px; background: var(--rule);
+}
+.btn-upload-text {
+  background: none; border: none; color: var(--gold);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; padding: 8px 20px 0;
+  text-decoration: underline; text-underline-offset: 3px;
+  display: block; width: 100%; text-align: center;
+}
+#fileInput { display: none; }
 
-  .btn-primary {
-    width: 100%; max-width: 340px;
-    background: var(--accent);
-    color: #000;
-    border: none; border-radius: 12px;
-    padding: 18px;
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    cursor: pointer;
-    position: relative; overflow: hidden;
-    transition: transform 0.15s, box-shadow 0.15s;
-    box-shadow: 0 0 24px rgba(0,255,136,0.3);
-  }
-  .btn-primary:active { transform: scale(0.97); }
-  .btn-primary::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
-  }
+.home-watermark {
+  margin: 28px auto 32px; opacity: 0.07; width: 120px; flex-shrink: 0;
+}
 
-  /* ── CAMERA ── */
-  #camera {
-    padding: 0; background: #000; justify-content: flex-start;
-  }
+/* ══ CAMERA ══ */
+#camera { padding: 0; background: #000; justify-content: flex-start; overflow: hidden; }
+.cam-viewport { position: relative; width: 100%; flex: 1; overflow: hidden; background: #000; min-height: 0; }
+#video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#canvas { display: none; }
+.cam-overlay {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+.viewfinder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; flex-direction: column; gap: 16px;
+}
+.vf-box {
+  width: min(78vw, 320px); aspect-ratio: 3.2 / 1; position: relative;
+}
+.vf-corner { position: absolute; width: 18px; height: 18px; border-color: var(--gold-light); border-style: solid; }
+.vf-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.vf-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.vf-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.vf-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.vf-box::after {
+  content: ''; position: absolute; inset: 0;
+  border: 1px solid rgba(232,201,106,0.22);
+}
+.scan-line {
+  position: absolute; left: 2px; right: 2px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232,201,106,0.6), var(--gold-light), rgba(232,201,106,0.6), transparent);
+  top: 0; animation: scanMove 2.2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(232,201,106,0.8);
+}
+@keyframes scanMove {
+  0%   { top: 2px; opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { top: calc(100% - 2px); opacity: 0; }
+}
+.vf-hint {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5); text-transform: uppercase; text-align: center;
+}
+.vf-code-hint {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  color: rgba(232,201,106,0.65); letter-spacing: 0.08em;
+}
 
-  .cam-viewport {
-    position: relative;
-    width: 100%; flex: 1;
-    overflow: hidden;
-    background: #000;
-  }
+.cam-bar {
+  width: 100%; background: rgba(10,9,8,0.96);
+  border-top: 1px solid rgba(232,201,106,0.18);
+  padding: 18px 24px 36px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px; flex-shrink: 0;
+}
+.cam-status {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: rgba(255,255,255,0.38); letter-spacing: 0.12em;
+  text-align: center; text-transform: uppercase;
+}
+.cam-actions { display: flex; gap: 12px; width: 100%; max-width: 300px; }
+.btn-shutter {
+  flex: 1; background: var(--gold); color: var(--ink);
+  border: none; border-radius: 4px; padding: 15px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.12s; box-shadow: 0 0 16px rgba(184,147,58,0.3);
+}
+.btn-shutter:active { transform: scale(0.96); }
+.btn-shutter svg { width: 16px; height: 16px; stroke: var(--ink); }
+.btn-back-cam {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px; padding: 15px 16px; color: rgba(255,255,255,0.55);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.btn-back-cam svg { width: 18px; height: 18px; stroke: currentColor; }
+.cam-upload-link {
+  background: none; border: none; color: rgba(255,255,255,0.28);
+  font-family: 'DM Sans', sans-serif; font-size: 12px;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+#fileInput2 { display: none; }
 
-  #video {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+/* ══ PROCESSING ══ */
+#processing {
+  justify-content: center; align-items: center; gap: 28px;
+  background: var(--paper); overflow: hidden;
+}
+.proc-bg {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 28px,
+    rgba(212,201,184,0.15) 28px, rgba(212,201,184,0.15) 29px
+  );
+}
+.proc-content {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+}
+.magnifier { width: 64px; height: 64px; position: relative; }
+.magnifier-circle {
+  position: absolute; top: 0; left: 0; width: 44px; height: 44px;
+  border: 3px solid var(--gold); border-radius: 50%;
+  animation: mpulse 1.8s ease-in-out infinite;
+}
+.magnifier-handle {
+  position: absolute; bottom: 4px; right: 4px;
+  width: 20px; height: 3px; background: var(--gold);
+  transform: rotate(45deg); transform-origin: left center; border-radius: 2px;
+}
+@keyframes mpulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.7; }
+}
+.proc-title {
+  font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700;
+  color: var(--ink); text-align: center;
+}
+.proc-detail {
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  text-align: center; letter-spacing: 0.08em; text-transform: uppercase; min-height: 18px;
+}
+.proc-bar-track { width: 200px; height: 2px; background: var(--rule); border-radius: 1px; overflow: hidden; }
+.proc-bar-fill { height: 100%; width: 0%; background: var(--gold); border-radius: 1px; transition: width 0.3s ease; }
 
-  #canvas { display: none; }
+/* ══ POST-SCAN RESULT ══ */
+#result {
+  justify-content: center; align-items: center;
+  gap: 22px; padding: 32px 24px; background: var(--paper);
+}
+.scan-result-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--gold);
+}
+.scan-result-icon.fail { border-color: var(--red); }
+.scan-result-icon svg { width: 28px; height: 28px; }
+.scan-result-title {
+  font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700;
+  text-align: center; color: var(--ink);
+}
+.scan-result-sub {
+  font-size: 13px; color: var(--muted); text-align: center; line-height: 1.5;
+  font-family: 'DM Mono', monospace; letter-spacing: 0.05em;
+}
+.found-code-display {
+  background: var(--ink); border-radius: 4px; padding: 14px 24px;
+  font-family: 'DM Mono', monospace; font-size: 18px; color: var(--gold-light);
+  letter-spacing: 0.08em; text-align: center; width: 100%; max-width: 320px;
+}
+.result-actions { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+.btn-go {
+  width: 100%; background: var(--gold); color: var(--ink);
+  border: none; border-radius: 4px; padding: 17px;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 2px 12px rgba(184,147,58,0.3); transition: transform 0.12s;
+}
+.btn-go:active { transform: scale(0.97); }
+.btn-go svg { width: 16px; height: 16px; stroke: var(--ink); }
+.btn-retry-scan {
+  width: 100%; background: none; border: 1px solid var(--rule);
+  border-radius: 4px; padding: 15px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink2); cursor: pointer;
+}
+.btn-retry-scan:active { border-color: var(--gold); }
+.alt-codes-section { width: 100%; max-width: 320px; }
+.alt-codes-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.alt-codes-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.code-chip {
+  background: var(--cream2); border: 1px solid var(--rule);
+  border-radius: 3px; padding: 7px 12px;
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink2);
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.code-chip.active { border-color: var(--gold); color: var(--gold); }
 
-  /* Viewfinder overlay */
-  .viewfinder {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    pointer-events: none;
-  }
-  .vf-box {
-    width: min(72vw, 300px);
-    aspect-ratio: 2.5 / 1;
-    position: relative;
-  }
-  .vf-box::before, .vf-box::after,
-  .vf-tl, .vf-tr, .vf-bl, .vf-br {
-    content: ''; position: absolute;
-    width: 20px; height: 20px;
-    border-color: var(--accent); border-style: solid;
-  }
-  .vf-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
-  .vf-tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
-  .vf-bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
-  .vf-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+/* ══ LOOKUP RESULT ══ */
+#lookup { justify-content: flex-start; background: var(--paper); overflow-y: auto; }
 
-  /* Scan line animation */
-  .scan-line {
-    position: absolute; left: 4px; right: 4px; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--scan-line), var(--accent), var(--scan-line), transparent);
-    top: 4px;
-    animation: scanMove 2s ease-in-out infinite;
-    box-shadow: 0 0 8px var(--accent);
-    border-radius: 1px;
-  }
-  @keyframes scanMove {
-    0%   { top: 4px; opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { top: calc(100% - 4px); opacity: 0; }
-  }
+.lookup-header {
+  width: 100%; background: var(--ink);
+  padding: 52px 28px 24px; position: relative; flex-shrink: 0;
+}
+.lookup-header::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+}
+.lookup-header::before {
+  content: '· · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·';
+  position: absolute; top: 14px; left: 0; right: 0; text-align: center;
+  font-size: 10px; letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.15); overflow: hidden; white-space: nowrap;
+}
+.lookup-eyebrow {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: 8px;
+}
+.lookup-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.4rem, 5vw, 1.9rem); color: #fff; line-height: 1.2;
+}
 
-  .vf-label {
-    position: absolute; top: calc(50% + min(36vw,150px) + 12px);
-    left: 50%; transform: translateX(-50%);
-    font-family: 'Syne Mono', monospace;
-    font-size: 11px; letter-spacing: 0.2em;
-    color: rgba(255,255,255,0.6);
-    white-space: nowrap;
-    text-transform: uppercase;
-  }
+.code-strip {
+  margin: 20px 20px 0; width: calc(100% - 40px);
+  background: var(--cream2); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.code-strip-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.code-strip-value {
+  font-family: 'DM Mono', monospace; font-size: 15px;
+  font-weight: 500; color: var(--ink); letter-spacing: 0.05em;
+}
 
-  /* Cam bottom bar */
-  .cam-bar {
-    width: 100%;
-    background: rgba(10,10,15,0.95);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--border);
-    padding: 20px 24px 32px;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 16px;
-  }
+.result-card {
+  margin: 16px 20px 0; width: calc(100% - 40px);
+  border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); flex-shrink: 0;
+}
+.result-card.valid { border-color: var(--green); }
+.result-card.expired { border-color: var(--red); }
 
-  .cam-status {
-    font-family: 'Syne Mono', monospace;
-    font-size: 12px; color: var(--muted);
-    letter-spacing: 0.1em;
-    text-align: center;
-  }
+.result-card-header {
+  padding: 20px 20px 16px; display: flex; align-items: flex-start; gap: 14px;
+}
+.result-card.valid .result-card-header { background: var(--green-light); }
+.result-card.expired .result-card-header { background: var(--red-light); }
+.result-card.not-found .result-card-header { background: var(--cream2); }
 
-  .cam-actions {
-    display: flex; gap: 16px; width: 100%; max-width: 320px;
-  }
+.status-badge {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; margin-top: 2px;
+}
+.result-card.valid .status-badge { background: var(--green); }
+.result-card.expired .status-badge { background: var(--red); }
+.result-card.not-found .status-badge { background: var(--muted); }
+.status-badge svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; }
 
-  .btn-shutter {
-    flex: 1;
-    background: var(--accent);
-    color: #000;
-    border: none; border-radius: 10px;
-    padding: 16px;
-    font-family: 'Syne', sans-serif;
-    font-size: 14px; font-weight: 800;
-    letter-spacing: 0.05em; text-transform: uppercase;
-    cursor: pointer;
-    box-shadow: 0 0 20px rgba(0,255,136,0.25);
-    transition: transform 0.15s, box-shadow 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .btn-shutter:active { transform: scale(0.96); }
-  .btn-shutter svg { width: 18px; height: 18px; stroke: #000; }
+.result-card-title {
+  font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700;
+  color: var(--ink); line-height: 1.2;
+}
+.result-card.valid .result-card-title { color: var(--green); }
+.result-card.expired .result-card-title { color: var(--red); }
+.result-card-sub { font-size: 13px; color: var(--ink2); margin-top: 4px; line-height: 1.4; }
 
-  .btn-back {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px; font-weight: 700;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: border-color 0.2s;
-  }
-  .btn-back:active { border-color: var(--accent); }
-  .btn-back svg { width: 18px; height: 18px; stroke: currentColor; }
+.result-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; background: var(--paper); }
+.detail-row { display: flex; flex-direction: column; gap: 3px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+.detail-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.detail-value { font-size: 15px; color: var(--ink); font-weight: 500; }
+.detail-value.expired-date { color: var(--red); }
+.detail-value.valid-date { color: var(--green); }
+.not-found-msg { font-size: 14px; color: var(--ink2); line-height: 1.6; }
 
-  .btn-upload {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'Syne', sans-serif;
-    font-size: 12px; letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px;
-    text-decoration: underline; text-underline-offset: 3px;
-  }
-  #fileInput { display: none; }
-
-  /* ── PROCESSING ── */
-  #processing {
-    gap: 32px;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 30%, rgba(0,255,136,0.05) 0%, transparent 70%),
-      var(--bg);
-  }
-
-  .spinner-wrap {
-    position: relative; width: 80px; height: 80px;
-  }
-  .spinner-ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    animation: spin 1.4s linear infinite;
-  }
-  .spinner-ring:nth-child(1) {
-    border-top-color: var(--accent);
-  }
-  .spinner-ring:nth-child(2) {
-    inset: 10px;
-    border-right-color: var(--accent2);
-    animation-duration: 1s; animation-direction: reverse;
-  }
-  .spinner-ring:nth-child(3) {
-    inset: 20px;
-    border-bottom-color: var(--accent);
-    animation-duration: 0.7s;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .proc-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.3em;
-    text-transform: uppercase; color: var(--accent);
-    text-align: center;
-  }
-  .proc-detail {
-    font-family: 'Syne Mono', monospace;
-    font-size: 13px; color: var(--muted);
-    text-align: center;
-    min-height: 20px;
-  }
-
-  /* ── RESULT ── */
-  #result {
-    gap: 32px;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,136,0.06) 0%, transparent 70%),
-      var(--bg);
-  }
-
-  .result-icon {
-    width: 72px; height: 72px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 32px rgba(0,255,136,0.25);
-  }
-  .result-icon.fail { border-color: var(--accent2); box-shadow: 0 0 32px rgba(255,60,172,0.2); }
-  .result-icon svg { width: 32px; height: 32px; stroke: var(--accent); }
-  .result-icon.fail svg { stroke: var(--accent2); }
-
-  .result-heading {
-    font-size: clamp(1.4rem, 6vw, 1.8rem); font-weight: 800;
-    letter-spacing: -0.02em; text-align: center;
-  }
-  .result-heading small {
-    display: block; font-size: 13px; font-weight: 400;
-    color: var(--muted); letter-spacing: 0.05em;
-    margin-top: 6px;
-  }
-
-  .code-card {
-    width: 100%; max-width: 340px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .code-card-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.25em;
-    text-transform: uppercase; color: var(--muted);
-  }
-  .code-value {
-    font-family: 'Syne Mono', monospace;
-    font-size: clamp(1.4rem, 7vw, 2rem);
-    font-weight: 400;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    word-break: break-all;
-  }
-  .url-preview {
-    font-family: 'Syne Mono', monospace;
-    font-size: 11px; color: var(--muted);
-    word-break: break-all;
-    line-height: 1.5;
-    margin-top: 4px;
-  }
-  .url-preview span { color: var(--accent2); }
-
-  .result-actions {
-    width: 100%; max-width: 340px;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .btn-go {
-    background: var(--accent);
-    color: #000; border: none; border-radius: 12px;
-    padding: 18px;
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 800;
-    letter-spacing: 0.05em; text-transform: uppercase;
-    cursor: pointer;
-    box-shadow: 0 0 24px rgba(0,255,136,0.3);
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: transform 0.15s;
-  }
-  .btn-go:active { transform: scale(0.97); }
-  .btn-go svg { width: 18px; height: 18px; stroke: #000; }
-
-  .btn-retry {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px; font-weight: 700;
-    letter-spacing: 0.05em; text-transform: uppercase;
-    cursor: pointer;
-    transition: border-color 0.2s;
-  }
-  .btn-retry:active { border-color: var(--accent); }
-
-  .all-codes-wrap {
-    width: 100%; max-width: 340px;
-  }
-  .all-codes-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .codes-list {
-    display: flex; flex-wrap: wrap; gap: 8px;
-  }
-  .code-chip {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-family: 'Syne Mono', monospace;
-    font-size: 13px; color: var(--text);
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .code-chip:hover, .code-chip:active {
-    border-color: var(--accent); color: var(--accent);
-  }
+.scan-again-wrap { padding: 20px 20px 48px; width: 100%; flex-shrink: 0; }
+.btn-scan-again {
+  width: 100%; background: none; border: 1px solid var(--rule);
+  border-radius: 4px; padding: 15px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--ink2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-scan-again:active { border-color: var(--gold); color: var(--gold); }
+.btn-scan-again svg { width: 16px; height: 16px; stroke: currentColor; }
 </style>
 </head>
 <body>
 
-<!-- ── HOME ── -->
+<!-- ══ HOME ══ -->
 <div class="screen" id="home">
-  <div class="logo-wrap">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/><circle cx="17.5" cy="17.5" r="2.5"/>
+  <div class="home-header">
+    <div class="header-eyebrow">Brochure Verification System</div>
+    <div class="header-title">Scan the back of your <em>brochure</em></div>
+    <div class="header-sub">Check if your brochure is current and on record.</div>
+  </div>
+
+  <div class="instruction-card">
+    <div class="instr-title">How to scan</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Flip the brochure over to the <strong>back cover</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Find the <strong>edition code</strong> — usually near the bottom corner</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Tap <strong>Open Camera</strong> and align the code in the frame</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="format-example">
+    <div class="format-label">Code format</div>
+    <div class="format-code">US-100123&nbsp;&nbsp;3/25</div>
+  </div>
+
+  <div class="scan-btn-wrap">
+    <button class="btn-scan" id="startBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
       </svg>
-    </div>
-    <span class="logo-title">ScanRoute</span>
+      Open Camera
+    </button>
   </div>
 
-  <div class="home-headline">
-    <h1>Point. Scan.<br><span>Launch.</span></h1>
-    <p>Capture any alphanumeric code<br>from the real world and open it instantly.</p>
-  </div>
+  <div class="divider-or">or</div>
+  <button class="btn-upload-text" id="uploadBtn">Upload a photo instead</button>
+  <input type="file" id="fileInput" accept="image/*">
 
-  <div class="url-config">
-    <label>Destination URL</label>
-    <div class="url-input-row">
-      <input type="url" id="baseUrl" value="https://example.com/lookup" placeholder="https://example.com/lookup">
-    </div>
-    <div class="param-hint">Opens as: <span>?code=<strong>ABC-1234</strong></span></div>
+  <div class="home-watermark">
+    <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="118" height="78" rx="3" stroke="#b8933a" stroke-width="1.5"/>
+      <line x1="1" y1="14" x2="119" y2="14" stroke="#b8933a" stroke-width="0.75"/>
+      <line x1="1" y1="66" x2="119" y2="66" stroke="#b8933a" stroke-width="0.75"/>
+      <rect x="8" y="20" width="50" height="6" rx="1" fill="#b8933a" opacity="0.5"/>
+      <rect x="8" y="30" width="38" height="4" rx="1" fill="#b8933a" opacity="0.3"/>
+      <rect x="8" y="38" width="44" height="4" rx="1" fill="#b8933a" opacity="0.3"/>
+      <rect x="8" y="46" width="30" height="4" rx="1" fill="#b8933a" opacity="0.3"/>
+      <rect x="72" y="20" width="40" height="40" rx="2" fill="#b8933a" opacity="0.12" stroke="#b8933a" stroke-width="0.5"/>
+      <rect x="8" y="70" width="35" height="4" rx="1" fill="#b8933a" opacity="0.4"/>
+      <rect x="78" y="70" width="34" height="4" rx="1" fill="#b8933a" opacity="0.6"/>
+    </svg>
   </div>
-
-  <button class="btn-primary" id="startBtn">
-    Open Camera →
-  </button>
 </div>
 
-<!-- ── CAMERA ── -->
+<!-- ══ CAMERA ══ -->
 <div class="screen hidden" id="camera">
   <div class="cam-viewport">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
+    <div class="cam-overlay"></div>
     <div class="viewfinder">
       <div class="vf-box">
-        <div class="vf-tl"></div>
-        <div class="vf-tr"></div>
-        <div class="vf-bl"></div>
-        <div class="vf-br"></div>
+        <div class="vf-corner tl"></div>
+        <div class="vf-corner tr"></div>
+        <div class="vf-corner bl"></div>
+        <div class="vf-corner br"></div>
         <div class="scan-line"></div>
       </div>
-      <div class="vf-label">Align code within frame</div>
+      <div class="vf-hint">Align edition code within frame</div>
+      <div class="vf-code-hint">US-XXXXXX &nbsp; MM/YY</div>
     </div>
   </div>
   <div class="cam-bar">
-    <div class="cam-status" id="camStatus">Camera ready — position your code</div>
+    <div class="cam-status" id="camStatus">Position the back of your brochure</div>
     <div class="cam-actions">
-      <button class="btn-back" id="backBtn">
+      <button class="btn-back-cam" id="backBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
       </button>
       <button class="btn-shutter" id="captureBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M6.6 6.6A9 9 0 1 1 17.4 17.4"/>
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
         </svg>
-        Scan
+        Scan Code
       </button>
     </div>
-    <button class="btn-upload" id="uploadBtn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      Upload image instead
-    </button>
-    <input type="file" id="fileInput" accept="image/*">
+    <button class="cam-upload-link" id="camUploadBtn">Upload image instead</button>
+    <input type="file" id="fileInput2" accept="image/*">
   </div>
 </div>
 
-<!-- ── PROCESSING ── -->
+<!-- ══ PROCESSING ══ -->
 <div class="screen hidden" id="processing">
-  <div class="spinner-wrap">
-    <div class="spinner-ring"></div>
-    <div class="spinner-ring"></div>
-    <div class="spinner-ring"></div>
+  <div class="proc-bg"></div>
+  <div class="proc-content">
+    <div class="magnifier">
+      <div class="magnifier-circle"></div>
+      <div class="magnifier-handle"></div>
+    </div>
+    <div class="proc-title">Reading brochure code…</div>
+    <div class="proc-detail" id="procDetail">Initialising</div>
+    <div class="proc-bar-track"><div class="proc-bar-fill" id="procBar"></div></div>
   </div>
-  <div class="proc-label">Reading image…</div>
-  <div class="proc-detail" id="procDetail">Initializing OCR engine</div>
 </div>
 
-<!-- ── RESULT ── -->
+<!-- ══ POST-SCAN RESULT (before redirect) ══ -->
 <div class="screen hidden" id="result">
-  <div class="result-icon" id="resultIcon">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="scan-result-icon" id="scanResultIcon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="20 6 9 17 4 12"/>
     </svg>
   </div>
+  <div class="scan-result-title" id="scanResultTitle">Code detected</div>
+  <div class="scan-result-sub" id="scanResultSub">Tap below to look up this brochure</div>
 
-  <div class="result-heading" id="resultHeading">
-    Code found
-    <small>Ready to navigate</small>
+  <div class="found-code-display" id="foundCodeDisplay" style="display:none"></div>
+
+  <div class="alt-codes-section" id="altCodesSection" style="display:none">
+    <div class="alt-codes-label">Multiple codes found — tap to select</div>
+    <div class="alt-codes-list" id="altCodesList"></div>
   </div>
 
-  <div class="code-card" id="codeCard">
-    <div class="code-card-label">Detected Code</div>
-    <div class="code-value" id="detectedCode">—</div>
-    <div class="url-preview" id="urlPreview"></div>
-  </div>
-
-  <div class="all-codes-wrap" id="allCodesWrap" style="display:none">
-    <div class="all-codes-label">Other codes found — tap to use</div>
-    <div class="codes-list" id="codesList"></div>
-  </div>
-
-  <div class="result-actions">
+  <div class="result-actions" id="resultActions" style="display:none">
     <button class="btn-go" id="goBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      Open URL
+      Look Up This Brochure
     </button>
-    <button class="btn-retry" id="retryBtn">Scan Again</button>
+    <button class="btn-retry-scan" id="retryBtn">Scan Again</button>
+  </div>
+
+  <div class="result-actions" id="failActions" style="display:none">
+    <button class="btn-retry-scan" id="retryBtn2">Try Again</button>
+  </div>
+</div>
+
+<!-- ══ LOOKUP RESULT ══ -->
+<div class="screen hidden" id="lookup">
+  <div class="lookup-header">
+    <div class="lookup-eyebrow">Brochure Verification</div>
+    <div class="lookup-title" id="lookupTitle">Checking record…</div>
+  </div>
+
+  <div class="code-strip">
+    <div class="code-strip-label">Edition Code</div>
+    <div class="code-strip-value" id="lookupCode">—</div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-card-header">
+      <div class="status-badge" id="statusBadge">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="result-card-title" id="resultCardTitle">—</div>
+        <div class="result-card-sub" id="resultCardSub">—</div>
+      </div>
+    </div>
+    <div class="result-body" id="resultBody"></div>
+  </div>
+
+  <div class="scan-again-wrap">
+    <button class="btn-scan-again" id="scanAgainBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Scan Another Brochure
+    </button>
   </div>
 </div>
 
 <script>
-  // ── STATE ──
-  let stream = null;
-  let selectedCode = null;
-  let allCodes = [];
-  let baseUrl = 'https://example.com/lookup';
+// ══════════════════════════════════════════
+// BROCHURE DATABASE — edit this array to manage your brochures
+// ══════════════════════════════════════════
+const BROCHURES = [
+  { code: 'US-100123', name: 'Spring Wellness Collection 2025',  expires: '3/25' },
+  { code: 'US-100124', name: 'Summer Travel Guide — Pacific',    expires: '6/25' },
+  { code: 'US-200456', name: 'Annual Benefits Overview',         expires: '12/25' },
+  { code: 'US-200457', name: 'Medicare Supplement Plans',        expires: '9/25' },
+  { code: 'US-300789', name: 'New Member Welcome Kit',           expires: '6/26' },
+  { code: 'US-300790', name: 'Provider Network Directory',       expires: '3/26' },
+  { code: 'US-123456', name: 'Dental & Vision Add-On Guide',     expires: '6/26' },
+  { code: 'US-999001', name: 'Legacy Plan Comparison Chart',     expires: '1/24' },
+];
 
-  // ── ELEMENTS ──
-  const screens = {
-    home: document.getElementById('home'),
-    camera: document.getElementById('camera'),
-    processing: document.getElementById('processing'),
-    result: document.getElementById('result'),
-  };
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const camStatus = document.getElementById('camStatus');
-  const procDetail = document.getElementById('procDetail');
-  const detectedCode = document.getElementById('detectedCode');
-  const urlPreview = document.getElementById('urlPreview');
-  const resultIcon = document.getElementById('resultIcon');
-  const resultHeading = document.getElementById('resultHeading');
-  const codeCard = document.getElementById('codeCard');
-  const allCodesWrap = document.getElementById('allCodesWrap');
-  const codesList = document.getElementById('codesList');
-  const goBtn = document.getElementById('goBtn');
-  const baseUrlInput = document.getElementById('baseUrl');
-  const fileInput = document.getElementById('fileInput');
+function parseExpiry(str) {
+  const [m, y] = str.trim().split('/').map(Number);
+  const fullYear = y < 100 ? 2000 + y : y;
+  return new Date(fullYear, m, 0, 23, 59, 59); // last day of that month
+}
+function isExpired(str) { return parseExpiry(str) < new Date(); }
+function formatExpiry(str) {
+  const [m, y] = str.trim().split('/').map(Number);
+  return new Date(y < 100 ? 2000 + y : y, m - 1, 1)
+    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-  // ── NAVIGATION ──
-  function showScreen(name) {
-    Object.entries(screens).forEach(([k, el]) => {
-      if (k === name) el.classList.remove('hidden');
-      else el.classList.add('hidden');
+// ══════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════
+const SCREENS = ['home','camera','processing','result','lookup'];
+function showScreen(name) {
+  SCREENS.forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', id !== name);
+  });
+}
+
+// ══════════════════════════════════════════
+// ROUTING — ?code= triggers lookup immediately
+// ══════════════════════════════════════════
+const urlParams = new URLSearchParams(window.location.search);
+const codeParam = urlParams.get('code');
+
+if (codeParam) {
+  showScreen('lookup');
+  renderLookup(decodeURIComponent(codeParam));
+} else {
+  showScreen('home');
+}
+
+// ══════════════════════════════════════════
+// LOOKUP RENDERER
+// ══════════════════════════════════════════
+function renderLookup(fullCode) {
+  document.getElementById('lookupCode').textContent = fullCode;
+
+  // Parse "US-100123 3/25" → code id + expiry on the printed brochure
+  const parts = fullCode.trim().split(' ');
+  const codeId = parts[0].toUpperCase();
+
+  const record = BROCHURES.find(b => b.code.toUpperCase() === codeId);
+  const card = document.getElementById('resultCard');
+  const badge = document.getElementById('statusBadge');
+  const cardTitle = document.getElementById('resultCardTitle');
+  const cardSub = document.getElementById('resultCardSub');
+  const body = document.getElementById('resultBody');
+  const lookupTitle = document.getElementById('lookupTitle');
+
+  if (!record) {
+    card.className = 'result-card not-found';
+    badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    lookupTitle.textContent = 'Code not recognised';
+    cardTitle.textContent = 'Not found in our records';
+    cardTitle.style.color = 'var(--ink2)';
+    cardSub.textContent = 'This code does not match any brochure on file.';
+    body.innerHTML = `<div class="not-found-msg">
+      The edition code <strong>${esc(fullCode)}</strong> was not found in the brochure registry.
+      This brochure may be unauthorised, from an older edition, or the code was misread.
+      Please contact your representative for assistance.
+    </div>`;
+    return;
+  }
+
+  const expired = isExpired(record.expires);
+  const expiryFmt = formatExpiry(record.expires);
+
+  if (expired) {
+    card.className = 'result-card expired';
+    badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    lookupTitle.textContent = 'Brochure is out of date';
+    cardTitle.textContent = 'Expired';
+    cardSub.textContent = 'This brochure is no longer current. Please request an updated copy.';
+  } else {
+    card.className = 'result-card valid';
+    badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    lookupTitle.textContent = 'Brochure verified';
+    cardTitle.textContent = 'Current & Valid';
+    cardSub.textContent = 'This brochure is active and up to date.';
+  }
+
+  body.innerHTML = `
+    <div class="detail-row">
+      <div class="detail-label">Brochure Name</div>
+      <div class="detail-value">${esc(record.name)}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Edition Code</div>
+      <div class="detail-value" style="font-family:'DM Mono',monospace;font-size:14px">${esc(record.code)}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">${expired ? 'Expired' : 'Valid Through'}</div>
+      <div class="detail-value ${expired ? 'expired-date' : 'valid-date'}">${expiryFmt}</div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════
+let stream = null;
+let selectedCode = null;
+
+async function startCamera() {
+  showScreen('camera');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
     });
+    document.getElementById('video').srcObject = stream;
+    document.getElementById('camStatus').textContent = 'Position the back of your brochure';
+  } catch (err) {
+    document.getElementById('camStatus').textContent = 'Camera error: ' + err.message;
   }
+}
 
-  // ── CAMERA ──
-  async function startCamera() {
-    baseUrl = baseUrlInput.value.trim() || 'https://example.com/lookup';
-    showScreen('camera');
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      });
-      video.srcObject = stream;
-      camStatus.textContent = 'Camera ready — position your code';
-    } catch (err) {
-      camStatus.textContent = 'Camera error: ' + err.message;
-    }
-  }
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  document.getElementById('video').srcObject = null;
+}
 
-  function stopCamera() {
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    video.srcObject = null;
-  }
+function captureFrame() {
+  const v = document.getElementById('video');
+  const c = document.getElementById('canvas');
+  c.width = v.videoWidth || 1280;
+  c.height = v.videoHeight || 720;
+  c.getContext('2d').drawImage(v, 0, 0);
+  return c.toDataURL('image/jpeg', 0.92);
+}
 
-  // ── CAPTURE ──
-  function captureFrame() {
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    return canvas.toDataURL('image/jpeg', 0.92);
-  }
+// ══════════════════════════════════════════
+// OCR
+// ══════════════════════════════════════════
+async function processImage(dataUrl) {
+  stopCamera();
+  showScreen('processing');
+  document.getElementById('procBar').style.width = '0%';
 
-  async function processImage(dataUrl) {
-    stopCamera();
-    showScreen('processing');
-
-    try {
-      const worker = Tesseract.createWorker({
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            const pct = Math.round(m.progress * 100);
-            procDetail.textContent = `Analysing… ${pct}%`;
-          } else {
-            procDetail.textContent = m.status.replace(/_/g, ' ');
-          }
+  try {
+    const worker = Tesseract.createWorker({
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          document.getElementById('procDetail').textContent = `Analysing… ${pct}%`;
+          document.getElementById('procBar').style.width = pct + '%';
+        } else {
+          document.getElementById('procDetail').textContent = m.status.replace(/_/g, ' ');
         }
-      });
-
-      await worker.load();
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
-      const { data: { text } } = await worker.recognize(dataUrl);
-      await worker.terminate();
-
-      // Extract alphanumeric codes: letters+digits, optionally separated by - _ .
-      // Pattern: at least 2 letters AND 2+ digits (in any arrangement), total length 4–20
-      const rawCodes = [...text.matchAll(/\b[A-Z0-9]{2,}(?:[-_.][A-Z0-9]+)*\b/gi)]
-        .map(m => m[0].toUpperCase())
-        .filter(c => {
-          const hasLetters = /[A-Z]/.test(c);
-          const hasDigits  = /[0-9]/.test(c);
-          const len = c.replace(/[-_.]/g, '').length;
-          return hasLetters && hasDigits && len >= 3 && len <= 20;
-        });
-
-      // Deduplicate, preserve order
-      const seen = new Set();
-      allCodes = rawCodes.filter(c => { if (seen.has(c)) return false; seen.add(c); return true; });
-
-      showResult(allCodes);
-    } catch (err) {
-      showFailure(err.message);
-    }
-  }
-
-  // ── RESULTS ──
-  function buildUrl(code) {
-    const url = new URL(baseUrl.startsWith('http') ? baseUrl : 'https://' + baseUrl);
-    url.searchParams.set('code', code);
-    return url.toString();
-  }
-
-  function setSelectedCode(code) {
-    selectedCode = code;
-    detectedCode.textContent = code;
-    const full = buildUrl(code);
-    const display = full.replace(code, `<span>${code}</span>`);
-    urlPreview.innerHTML = display;
-    // Highlight chosen chip
-    document.querySelectorAll('.code-chip').forEach(c => {
-      c.style.borderColor = c.dataset.code === code ? 'var(--accent)' : '';
-      c.style.color       = c.dataset.code === code ? 'var(--accent)' : '';
+      }
     });
+    await worker.load();
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
+    const { data: { text } } = await worker.recognize(dataUrl);
+    await worker.terminate();
+
+    // Match US-XXXXXX followed by optional spaces and M/YY or MM/YY
+    const matches = [...text.matchAll(/US-\d{6}\s+\d{1,2}\/\d{2}/gi)]
+      .map(m => m[0].replace(/\s+/, ' ').toUpperCase());
+
+    const seen = new Set();
+    const codes = matches.filter(c => !seen.has(c) && seen.add(c));
+
+    showScanResult(codes);
+  } catch (err) {
+    showScanFailure(err.message);
   }
+}
 
-  function showResult(codes) {
-    if (codes.length === 0) { showFailure('No alphanumeric code detected'); return; }
+// ══════════════════════════════════════════
+// POST-SCAN RESULT SCREEN
+// ══════════════════════════════════════════
+function showScanResult(codes) {
+  if (!codes.length) { showScanFailure('No brochure code found in this image.'); return; }
 
-    resultIcon.className = 'result-icon';
-    resultIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-    resultHeading.innerHTML = `Code found<small>Ready to navigate</small>`;
-    codeCard.style.display = '';
-    goBtn.disabled = false;
-    goBtn.style.opacity = '';
+  selectedCode = codes[0];
 
-    // Primary code (first / best)
-    setSelectedCode(codes[0]);
+  const icon = document.getElementById('scanResultIcon');
+  icon.className = 'scan-result-icon';
+  icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  document.getElementById('scanResultTitle').textContent = 'Code detected';
+  document.getElementById('scanResultSub').textContent = 'Tap below to look up this brochure';
 
-    // Alternates
-    if (codes.length > 1) {
-      allCodesWrap.style.display = '';
-      codesList.innerHTML = '';
-      codes.forEach(c => {
-        const chip = document.createElement('button');
-        chip.className = 'code-chip';
-        chip.textContent = c;
-        chip.dataset.code = c;
-        chip.addEventListener('click', () => setSelectedCode(c));
-        codesList.appendChild(chip);
+  const display = document.getElementById('foundCodeDisplay');
+  display.style.display = '';
+  display.textContent = selectedCode;
+
+  document.getElementById('resultActions').style.display = '';
+  document.getElementById('failActions').style.display = 'none';
+
+  const altSection = document.getElementById('altCodesSection');
+  const altList = document.getElementById('altCodesList');
+
+  if (codes.length > 1) {
+    altSection.style.display = '';
+    altList.innerHTML = '';
+    codes.forEach(c => {
+      const chip = document.createElement('button');
+      chip.className = 'code-chip' + (c === selectedCode ? ' active' : '');
+      chip.textContent = c;
+      chip.addEventListener('click', () => {
+        selectedCode = c;
+        display.textContent = c;
+        altList.querySelectorAll('.code-chip').forEach(ch =>
+          ch.classList.toggle('active', ch.textContent === c));
       });
-      setSelectedCode(codes[0]); // re-run to highlight first chip
-    } else {
-      allCodesWrap.style.display = 'none';
-    }
-
-    showScreen('result');
+      altList.appendChild(chip);
+    });
+  } else {
+    altSection.style.display = 'none';
   }
 
-  function showFailure(msg) {
-    resultIcon.className = 'result-icon fail';
-    resultIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-    resultHeading.innerHTML = `No code found<small>${msg}</small>`;
-    codeCard.style.display = 'none';
-    allCodesWrap.style.display = 'none';
-    goBtn.disabled = true; goBtn.style.opacity = '0.4';
-    showScreen('result');
-  }
+  showScreen('result');
+}
 
-  // ── EVENTS ──
-  document.getElementById('startBtn').addEventListener('click', startCamera);
+function showScanFailure(msg) {
+  const icon = document.getElementById('scanResultIcon');
+  icon.className = 'scan-result-icon fail';
+  icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  document.getElementById('scanResultTitle').textContent = 'No code found';
+  document.getElementById('scanResultSub').textContent = msg;
+  document.getElementById('foundCodeDisplay').style.display = 'none';
+  document.getElementById('resultActions').style.display = 'none';
+  document.getElementById('altCodesSection').style.display = 'none';
+  document.getElementById('failActions').style.display = '';
+  showScreen('result');
+}
 
-  document.getElementById('captureBtn').addEventListener('click', async () => {
-    document.getElementById('captureBtn').disabled = true;
-    camStatus.textContent = 'Capturing…';
-    const dataUrl = captureFrame();
-    await processImage(dataUrl);
-    document.getElementById('captureBtn').disabled = false;
-  });
+// ══════════════════════════════════════════
+// REDIRECT — same page with ?code=
+// ══════════════════════════════════════════
+function redirectWithCode(code) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.searchParams.set('code', code);
+  window.location.href = url.toString();
+}
 
-  document.getElementById('backBtn').addEventListener('click', () => {
-    stopCamera(); showScreen('home');
-  });
+// ══════════════════════════════════════════
+// EVENT LISTENERS
+// ══════════════════════════════════════════
+document.getElementById('startBtn').addEventListener('click', startCamera);
+document.getElementById('backBtn').addEventListener('click', () => { stopCamera(); showScreen('home'); });
 
-  document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
+document.getElementById('captureBtn').addEventListener('click', async () => {
+  document.getElementById('captureBtn').disabled = true;
+  document.getElementById('camStatus').textContent = 'Capturing…';
+  const dataUrl = captureFrame();
+  await processImage(dataUrl);
+  document.getElementById('captureBtn').disabled = false;
+});
 
-  fileInput.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev => {
-      stopCamera();
-      await processImage(ev.target.result);
-    };
-    reader.readAsDataURL(file);
-    fileInput.value = '';
-  });
+// Upload from home
+document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => processImage(ev.target.result);
+  r.readAsDataURL(f);
+  e.target.value = '';
+});
 
-  goBtn.addEventListener('click', () => {
-    if (selectedCode) window.open(buildUrl(selectedCode), '_blank');
-  });
+// Upload from camera bar
+document.getElementById('camUploadBtn').addEventListener('click', () => document.getElementById('fileInput2').click());
+document.getElementById('fileInput2').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  stopCamera();
+  const r = new FileReader();
+  r.onload = ev => processImage(ev.target.result);
+  r.readAsDataURL(f);
+  e.target.value = '';
+});
 
-  document.getElementById('retryBtn').addEventListener('click', () => {
-    selectedCode = null; allCodes = [];
-    startCamera();
-  });
+document.getElementById('goBtn').addEventListener('click', () => {
+  if (selectedCode) redirectWithCode(selectedCode);
+});
+
+document.getElementById('retryBtn').addEventListener('click', () => { selectedCode = null; startCamera(); });
+document.getElementById('retryBtn2').addEventListener('click', () => { selectedCode = null; startCamera(); });
+
+document.getElementById('scanAgainBtn').addEventListener('click', () => {
+  const url = new URL(window.location.href);
+  url.search = '';
+  window.history.replaceState({}, '', url.toString());
+  showScreen('home');
+});
 </script>
 </body>
 </html>
